@@ -1,56 +1,82 @@
 ---
-import BaseHead from '../components/BaseHead.astro';
-import Footer from '../components/Footer.astro';
-import Header from '../components/Header.astro';
-import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 import { getCollection } from 'astro:content';
+import { Image } from 'astro:assets';
+import BaseLayout from '../layouts/BaseLayout.astro';
 import FormattedDate from '../components/FormattedDate.astro';
+import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 
-const posts = (await getCollection('blog')).sort(
-	(a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
+const posts = (await getCollection('blog', ({ data }) => !data.draft)).sort(
+  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
 );
+const [lead, ...rest] = posts;
+const sidebar = rest.slice(0, 3);
+const earlier = rest.slice(3, 9);
 ---
 
-<!doctype html>
-<html lang="en">
-	<head>
-		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
-	</head>
-	<body class="bg-[#fcfbf9] text-[#111111] font-serif">
-		<Header />
-		
-		<main class="max-w-3xl mx-auto px-4 py-8">
-			
-			<div class="text-center border-y-2 border-black py-5 mb-8">
-				<h1 class="text-2xl font-bold tracking-tight uppercase font-newspaper-title">Yana Suryana</h1>
-				<p class="text-xs text-gray-700 mt-1">Creator</p>
-			</div>
+<BaseLayout title={SITE_TITLE} description={SITE_DESCRIPTION}>
+  {!lead ? (
+    <p class="py-20 text-center italic text-muted">Coming Soon...</p>
+  ) : (
+    <>
+      <section class="grid gap-8 lg:grid-cols-12">
+        <article class="lg:col-span-8 lg:border-r lg:border-rule lg:pr-8">
+          <p class="mb-2 font-ui text-[11px] font-bold uppercase tracking-widest text-muted">
+            Headline
+          </p>
+          {lead.data.heroImage && (
+            <Image
+              src={lead.data.heroImage}
+              alt=""
+              class="mb-4 w-full grayscale"
+              loading="eager"
+            />
+          )}
+          <h1 class="text-4xl font-black md:text-5xl">
+            <a href={`/blog/${lead.id}/`} class="no-underline hover:underline">{lead.data.title}</a>
+          </h1>
+          <p class="mt-3 text-lg leading-relaxed">{lead.data.description}</p>
+          <p class="mt-3 font-ui text-xs uppercase tracking-wider text-muted">
+            <FormattedDate date={lead.data.pubDate} />
+          </p>
+        </article>
 
-			<section>
-				<h2 class="text-xs uppercase font-bold tracking-widest border-b border-black pb-1 mb-6">
-					Latest Dispatches
-				</h2>
-				
-				<ul class="space-y-6">
-					{posts.map((post) => (
-						<li class="border-b border-gray-300 pb-4">
-							<div class="text-xs text-gray-500 mb-1 font-sans">
-								<FormattedDate date={post.data.pubDate} />
-							</div>
-							<h3 class="text-base font-bold mb-1">
-								<a href={`/blog/${post.id}/`} class="text-[#111111] no-underline hover:underline font-newspaper-title">
-									{post.data.title}
-								</a>
-							</h3>
-							<p class="text-xs text-gray-800 font-newspaper-body leading-normal line-clamp-2">
-								{post.data.description}
-							</p>
-						</li>
-					))}
-				</ul>
-			</section>
+        <aside class="lg:col-span-4" aria-label="See also">
+          <h2 class="mb-4 border-b border-ink pb-1 font-ui text-xs font-bold uppercase tracking-widest">
+            See also
+          </h2>
+          <ul class="space-y-5">
+            {sidebar.map((post) => (
+              <li class="border-b border-rule pb-4 last:border-0">
+                <p class="font-ui text-[11px] uppercase tracking-wider text-muted">
+                  <FormattedDate date={post.data.pubDate} />
+                </p>
+                <h3 class="text-xl font-bold">
+                  <a href={`/blog/${post.id}/`} class="no-underline hover:underline">{post.data.title}</a>
+                </h3>
+                <p class="line-clamp-3 text-sm">{post.data.description}</p>
+              </li>
+            ))}
+          </ul>
+        </aside>
+      </section>
 
-		</main>
-		<Footer />
-	</body>
-</html>
+      {earlier.length > 0 && (
+        <section class="mt-10 border-t-2 border-ink pt-3">
+          <h2 class="mb-6 font-ui text-xs font-bold uppercase tracking-widest">Archive</h2>
+          <ul class="grid gap-x-8 gap-y-6 md:grid-cols-2 lg:grid-cols-3">
+            {earlier.map((post) => (
+              <li class="border-b border-rule pb-4">
+                <p class="font-ui text-[11px] uppercase tracking-wider text-muted">
+                  <FormattedDate date={post.data.pubDate} />
+                </p>
+                <h3 class="text-lg font-bold">
+                  <a href={`/blog/${post.id}/`} class="no-underline hover:underline">{post.data.title}</a>
+                </h3>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+    </>
+  )}
+</BaseLayout>
